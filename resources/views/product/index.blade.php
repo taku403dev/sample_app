@@ -17,9 +17,15 @@
 </div>
 @endif
 
-{{-- 新規登録画面へ --}}
-<a class="btn btn-primary mb-2" href="{{ route('product.create') }}" role="button">新規登録</a>
-
+<div class="row ml-1">
+{{-- 新規登録画面 --}}
+<a class="btn btn-primary mb-2 mr-2" href="{{ route('product.create') }}" role="button">新規登録</a>
+{{-- 商品説明検索 --}}
+<form class="form-inline mt-2 mb-2 mt-md-0" method="GET" route>
+    <input class="form-control mr-sm-2" type="text" name="keyword" placeholder="検索" aria-label="Search">
+    <button class="btn btn-outline-success my-2 my-sm-0" type="submit">検索</button>
+  </form>
+</div>
 <div class="card">
     <div class="card-body">
         <table class="table table-bordered">
