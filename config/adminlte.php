@@ -227,6 +227,12 @@ return [
     'menu' => [
         // Navbar items:
         [
+            'text' => '商品マスタ',
+            'route'  => 'product.index',
+            'icon' => 'fas fa-shopping-cart',
+            'active' => ['product/*'],
+        ],
+        [
             'type'         => 'navbar-search',
             'text'         => 'search',
             'topnav_right' => true,

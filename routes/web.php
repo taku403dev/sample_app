@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProductsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,11 +14,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
+Route::resource('product', ProductsController::class, ['except' => ['show']]);
+
 Route::get('/', function () {
-    return view('index');
+    return redirect('/product');
 });
 
 Route::get('/dashboard', function () {
