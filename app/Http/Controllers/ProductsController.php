@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use App\Models\Product;
 use App\Http\Requests\ProductRequest;
+use App\Services\ConvertorService;
+use Illuminate\Contracts\Encryption\DecryptException;
 
 class ProductsController extends Controller
 {
@@ -16,13 +19,40 @@ class ProductsController extends Controller
     public function index(Request $request)
     {
 
-      $products = Product::searchKeyword($request->keyword)
-      ->paginate(5);
+        // 複合・検索結果の商品情報を格納
+        $decryptedProducts = [];
+        // 商品情報一覧を取得
+        // $products = Product::searchKeyword($request->keyword)
+        //     ->paginate(5);
+        $products = Product::all();
+        // 複合・検索結果の商品情報を格納
+        $decryptedProducts = [];
 
-      return view(
-          'product.index',
-          ['products' => $products]
-      );
+        // 取得結果に復号化処理
+        foreach ($products as $product) {
+            try {
+                // 商品名復号化
+                $name = Crypt::decryptString($product->name);
+                // 商品名復号化データに対し検索キーワードが引っかからない場合
+                if (strpos($name, $request->keyword) === false) continue;
+
+                // 復号化変換処理
+                $product->name = $name;
+                $product->price = Crypt::decryptString($product->price);
+                $product->info = Crypt::decryptString($product->info);
+
+                // フィルター結果のデータを追加
+                array_push($decryptedProducts, $product);
+            } catch (DecryptException $e) {
+                echo $e;
+            }
+        }
+
+        // 画面に表示
+        return view(
+            'product.index',
+            ['products' => $decryptedProducts]
+        );
     }
 
     /**
@@ -44,11 +74,10 @@ class ProductsController extends Controller
     public function store(ProductRequest $request)
     {
         $product = new Product;
+        $convertedParams = ConvertorService::toEncryptStringFromRequestParameters($request);
 
-        // fillを使用する場合は、必ずモデルのfillableを指定する
-        $product->fill($request->all())->save();
+        $product->fill($convertedParams)->save();
 
-        // 一覧へ戻り完了メッセージを表示
         return redirect()->route('product.index')->with('message', '登録しました');
     }
 
@@ -60,7 +89,6 @@ class ProductsController extends Controller
      */
     public function show($id)
     {
-
     }
 
     /**
@@ -72,6 +100,14 @@ class ProductsController extends Controller
     public function edit($id)
     {
         $product = Product::find($id);
+        try {
+            $product->name = Crypt::decryptString($product->name);
+            $product->price = Crypt::decryptString($product->price);
+            $product->info = Crypt::decryptString($product->info);
+            // dd($product);
+        } catch (DecryptException $e) {
+            echo $e;
+        }
 
         return view('product.edit', [
             'product' => $product

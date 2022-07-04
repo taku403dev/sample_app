@@ -33,7 +33,7 @@ class Product extends Model
 
             // 含まれている単語を検索する
             foreach ($keywords as $keyword) {
-                $query->where('products.info', 'like', '%' . $keyword . '%');
+                $query->where('products.name', 'like', '%' . $keyword . '%');
             }
 
             return $query;
