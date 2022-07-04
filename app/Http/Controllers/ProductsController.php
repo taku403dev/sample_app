@@ -18,36 +18,11 @@ class ProductsController extends Controller
     {
 
         /***************** DB側で復号化を実施するパターン ******************************/
-        $app_key = env('APP_KEY');
-
-        // 検索キーワードが含まれている場合(DB側で検索キーワードを絞り込む)
-        if (!is_null($request->keyword)) {
-            $products = Product::whereRaw("CONVERT(AES_DECRYPT(UNHEX(`name`), '{$app_key}') USING utf8) LIKE '%{$request->keyword}%'")
-                ->select('id')
-                ->selectRaw(
-                    "CONVERT(AES_DECRYPT(UNHEX(`name`), '{$app_key}') USING utf8) as name"
-                )
-                ->selectRaw(
-                    "CONVERT(AES_DECRYPT(UNHEX(`price`), '{$app_key}') USING utf8) as price"
-                )
-                ->selectRaw(
-                    "CONVERT(AES_DECRYPT(UNHEX(`info`), '{$app_key}') USING utf8) as info"
-                )
-                ->get();
-        } else {
-            $products = DB::table('products')
-                ->select('id')
-                ->selectRaw(
-                    "CONVERT(AES_DECRYPT(UNHEX(`name`), '{$app_key}') USING utf8) as name"
-                )
-                ->selectRaw(
-                    "CONVERT(AES_DECRYPT(UNHEX(`price`), '{$app_key}') USING utf8) as price"
-                )
-                ->selectRaw(
-                    "CONVERT(AES_DECRYPT(UNHEX(`info`), '{$app_key}') USING utf8) as info"
-                )
-                ->get();
-        }
+        // 検索キーワード処理(DB側で検索キーワードを絞り込む)
+        $products = Product::SearchEncryptedKeywordOnDB('name', $request->keyword)
+            // 暗号化された状態で取得するので変換する
+            ->decryptColumns(['name', 'price', 'info'])->get();
+        /**************************************************************************/
 
         // 画面に表示
         return view(
@@ -76,7 +51,7 @@ class ProductsController extends Controller
     {
         $app_key = env('APP_KEY');
 
-        // 登録(DB側で暗号化処理を実施)
+        // 登録(DB側で暗号化)
         Product::create([
             'name' => DB::raw("HEX(AES_ENCRYPT('{$request->name}', '{$app_key}'))"),
             'price' => DB::raw("HEX(AES_ENCRYPT('{$request->price}', '{$app_key}'))"),
@@ -107,19 +82,8 @@ class ProductsController extends Controller
         $app_key = env('APP_KEY');
 
         /***************************** DB側で復号化 ***************************************/
-        $product =  DB::table('products')
-            ->where('id', $id)
-            ->select('id')
-            ->selectRaw(
-                "CONVERT(AES_DECRYPT(UNHEX(`name`), '{$app_key}') USING utf8) as name"
-            )
-            ->selectRaw(
-                "CONVERT(AES_DECRYPT(UNHEX(`price`), '{$app_key}') USING utf8) as price"
-            )
-            ->selectRaw(
-                "CONVERT(AES_DECRYPT(UNHEX(`info`), '{$app_key}') USING utf8) as info"
-            )
-            ->first();
+        $product =  Product::where('id', $id)->select('*')
+            ->decryptColumns(['name', 'price', 'info'])->first();
 
         return view('product.edit', [
             'product' => $product
