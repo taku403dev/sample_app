@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 
 class ProductFactory extends Factory
 {
@@ -14,10 +14,13 @@ class ProductFactory extends Factory
      */
     public function definition()
     {
+
+        $app_key = env('APP_KEY');
+        $price = (string)$this->faker->unixTime();
         return [
-            'name' => Crypt::encryptString($this->faker->name()),
-            'price' => Crypt::encryptString((string)$this->faker->unixTime()),
-            'info' => Crypt::encryptString($this->faker->text()),
+            'name' => DB::raw("HEX(AES_ENCRYPT('{$this->faker->name()}', '{$app_key}'))"),
+            'price' => DB::raw("HEX(AES_ENCRYPT('{$price}', '{$app_key}'))"),
+            'info' => DB::raw("HEX(AES_ENCRYPT('{$this->faker->text()}', '{$app_key}'))"),
         ];
     }
 }
