@@ -22,8 +22,6 @@ class ProductsController extends Controller
         // 複合・検索結果の商品情報を格納
         $decryptedProducts = [];
         // 商品情報一覧を取得
-        // $products = Product::searchKeyword($request->keyword)
-        //     ->paginate(5);
         $products = Product::all();
         // 複合・検索結果の商品情報を格納
         $decryptedProducts = [];
@@ -33,7 +31,7 @@ class ProductsController extends Controller
             try {
                 // 商品名復号化
                 $name = Crypt::decryptString($product->name);
-                // 商品名復号化データに対し検索キーワードが引っかからない場合
+                // 復号化したデータに対し検索キーワードが引っかからない場合
                 if (strpos($name, $request->keyword) === false) continue;
 
                 // 復号化変換処理
@@ -124,15 +122,17 @@ class ProductsController extends Controller
     public function update(ProductRequest $request, $id)
     {
         $product = Product::find($id);
-        // dd($request);
-        $product->fill($request->all())->save();
+
+        $convertedParams = [];
+        $convertedParams = ConvertorService::toEncryptStringFromRequestParameters($request);
+        $product->fill($convertedParams)->save();
 
         // 一覧へ戻り完了メッセージを表示
         return redirect()->route('product.index')->with('message', '編集しました');
     }
 
     /**
-     * Remove the specified resource from storage.
+    * Remove the specified resource from storage.
      *
      * @param  int  $id
      * @return \Illuminate\Http\Response
